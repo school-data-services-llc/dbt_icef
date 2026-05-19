@@ -23,6 +23,7 @@ sources:
         description: State testing continuous data for 2025-26 school year
         tests:
           - state_testing_continuous_25_26_cast_summative_no_duplicates: {}
+          - state_testing_continuous_25_26_sbac_summative_no_duplicates: {}
 
   - name: dbt_historical
     description: Historical tables in dbt_historical dataset
