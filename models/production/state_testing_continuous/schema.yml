@@ -21,6 +21,8 @@ sources:
       - name: state_testing_continuous_25_26
         identifier: state_testing_continuous_25-26
         description: State testing continuous data for 2025-26 school year
+        tests:
+          - state_testing_continuous_25_26_cast_summative_no_duplicates: {}
 
   - name: dbt_historical
     description: Historical tables in dbt_historical dataset
@@ -54,3 +56,22 @@ sources:
     tables:
       - name: knight_time_intervention_grade_11_2025
         description: List of grade 11 students for intervention in 2024-2025
+
+models:
+  - name: cast_state_testing_tabular
+    description: CAST summative tabular view (24-25 live + historical snapshot-only, 25-26 roster-driven).
+    columns:
+      - name: year
+        tests:
+          - not_null
+          - accepted_values:
+              values: ['24-25', '25-26']
+
+  - name: sbac_state_testing_tabular
+    description: SBAC ELA/Math summative tabular view with prior-year metrics.
+    columns:
+      - name: year
+        tests:
+          - not_null
+          - accepted_values:
+              values: ['24-25', '25-26']

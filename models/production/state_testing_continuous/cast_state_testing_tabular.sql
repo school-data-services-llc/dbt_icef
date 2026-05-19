@@ -161,6 +161,19 @@ historical AS (
     teacher,
     '24-25' AS year
   FROM `icef-437920.dbt_historical.cast_state_testing_tabular_24-25`
+),
+
+-- current_year_2425 (live source) is authoritative for 24-25; the snapshot has NULLs for the
+-- cast__* domain bands which prevents SELECT DISTINCT from collapsing duplicate rows.
+-- Keep snapshot rows only for students NOT in the live branch (e.g., students no longer on the roster).
+historical_24_25_only AS (
+  SELECT h.*
+  FROM historical h
+  LEFT JOIN current_year_2425 c
+    ON h.studentidentifier = c.studentidentifier
+    OR h.student_number    = c.student_number
+  WHERE c.studentidentifier IS NULL
+    AND c.student_number    IS NULL
 )
 
 SELECT DISTINCT *
@@ -169,7 +182,7 @@ FROM (
   UNION ALL
   SELECT * FROM current_year_2526
   UNION ALL
-  SELECT * FROM historical
+  SELECT * FROM historical_24_25_only
 )
 
 

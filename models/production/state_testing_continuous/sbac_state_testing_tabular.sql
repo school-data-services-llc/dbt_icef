@@ -419,6 +419,20 @@ historical AS (
     CAST('24-25' AS STRING) AS year,
     intervention
   FROM `icef-437920.dbt_historical.sbac_state_testing_tabular_24-25`
+),
+
+-- current_year_2425 (live source) is authoritative for 24-25; the snapshot's roster fields
+-- (and prev_year_math_proficiency, which the snapshot doesn't carry) drift from the live branch
+-- and prevent SELECT DISTINCT from collapsing duplicate rows.
+-- Keep snapshot rows only for students NOT in the live branch (e.g., students no longer on the roster).
+historical_24_25_only AS (
+  SELECT h.*
+  FROM historical h
+  LEFT JOIN current_year_2425 c
+    ON h.studentidentifier = c.studentidentifier
+    OR h.student_number    = c.student_number
+  WHERE c.studentidentifier IS NULL
+    AND c.student_number    IS NULL
 )
 
 SELECT DISTINCT *
@@ -427,5 +441,5 @@ FROM (
   UNION ALL
   SELECT * FROM current_year_2526
   UNION ALL
-  SELECT * FROM historical
+  SELECT * FROM historical_24_25_only
 )
