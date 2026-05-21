@@ -96,6 +96,8 @@ models:
         description: The label for the performance band.
       - name: proficiency
         description: The proficiency level of the student.
+      - name: hit_tutoring
+        description: HIT tutoring flag from student_to_teacher (joined on local_student_id and year).
 
   - name: main_elem
     description: >
@@ -117,6 +119,8 @@ models:
     columns:
       - name: year
         description: School year (student_to_teacher / main).
+      - name: hit_tutoring
+        description: HIT tutoring flag from student_to_teacher.
       - name: data_source
         description: From main; restricted to iready or dibels by model filters.
       - name: unit

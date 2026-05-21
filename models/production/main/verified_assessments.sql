@@ -40,6 +40,7 @@ SELECT
   CAST(st.school_name AS STRING) AS school_name,
   CAST(st.sped_identifier AS STRING) AS sped_identifier,
   CAST(st.absenteeism_status AS STRING) AS absenteeism_status,
+  CAST(st.hit_tutoring AS STRING) AS hit_tutoring,
   CAST(st.grade_level AS INT64) AS grade_level,
   CAST(st.student_number AS INT64) AS student_number,
   CAST(d.boy_composite_dibels AS STRING) AS boy_composite_dibels,

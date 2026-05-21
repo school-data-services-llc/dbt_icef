@@ -67,6 +67,8 @@ models:
           - not_null
           - accepted_values:
               values: ['24-25', '25-26']
+      - name: hit_tutoring
+        description: HIT tutoring flag from student_to_teacher (NULL on historical snapshot-only rows).
 
   - name: sbac_state_testing_tabular
     description: SBAC ELA/Math summative tabular view with prior-year metrics.
@@ -76,3 +78,5 @@ models:
           - not_null
           - accepted_values:
               values: ['24-25', '25-26']
+      - name: hit_tutoring
+        description: HIT tutoring flag from student_to_teacher (NULL on historical snapshot-only rows).

@@ -229,6 +229,7 @@ student_to_teacher_2425 AS (
     school_name,
     sped_identifier,
     absenteeism_status,
+    hit_tutoring,
     english_teacher,
     math_teacher
   FROM {{ source('views', 'student_to_teacher') }}
@@ -245,6 +246,7 @@ student_to_teacher_2526 AS (
     school_name,
     sped_identifier,
     absenteeism_status,
+    hit_tutoring,
     english_teacher,
     math_teacher
   FROM {{ source('views', 'student_to_teacher') }}
@@ -308,6 +310,7 @@ current_year_2425 AS (
     st.school_name,
     st.sped_identifier,
     st.absenteeism_status,
+    st.hit_tutoring,
     st.english_teacher,
     st.math_teacher,
     CAST('24-25' AS STRING) AS year,
@@ -361,6 +364,7 @@ current_year_2526 AS (
     st.school_name,
     st.sped_identifier,
     st.absenteeism_status,
+    st.hit_tutoring,
     st.english_teacher,
     st.math_teacher,
     CAST('25-26' AS STRING) AS year,
@@ -414,6 +418,7 @@ historical AS (
     school_name,
     sped_identifier,
     absenteeism_status,
+    CAST(NULL AS STRING) AS hit_tutoring,
     english_teacher,
     math_teacher,
     CAST('24-25' AS STRING) AS year,

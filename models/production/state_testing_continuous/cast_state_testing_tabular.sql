@@ -50,6 +50,7 @@ student_to_teacher_2425 AS (
     school_name,
     sped_identifier,
     absenteeism_status,
+    hit_tutoring,
     science_teacher,
     math_teacher,
     CASE
@@ -71,6 +72,7 @@ student_to_teacher_2526 AS (
     school_name,
     sped_identifier,
     absenteeism_status,
+    hit_tutoring,
     science_teacher,
     math_teacher,
     CASE
@@ -102,6 +104,7 @@ current_year_2425 AS (
     st.school_name,
     st.sped_identifier,
     st.absenteeism_status,
+    st.hit_tutoring,
     st.teacher,
     '24-25' AS year
   FROM cast_continuous_2425 cc
@@ -130,6 +133,7 @@ current_year_2526 AS (
     st.school_name,
     st.sped_identifier,
     st.absenteeism_status,
+    st.hit_tutoring,
     st.teacher,
     '25-26' AS year
   FROM cast_continuous_2526 cc
@@ -158,6 +162,7 @@ historical AS (
     school_name,
     sped_identifier,
     absenteeism_status,
+    CAST(NULL AS STRING) AS hit_tutoring,
     teacher,
     '24-25' AS year
   FROM `icef-437920.dbt_historical.cast_state_testing_tabular_24-25`
