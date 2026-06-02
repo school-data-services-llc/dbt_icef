@@ -134,7 +134,7 @@ prior_2425_metrics_by_student_number AS (
 ),
 
 ela_continuous_2526 AS (
-  SELECT DISTINCT
+  SELECT
     StudentIdentifier AS studentidentifier,
     student_number,
     AssessmentName AS ela_assessmentname,
@@ -150,10 +150,14 @@ ela_continuous_2526 AS (
   FROM {{ source('state_testing', 'state_testing_continuous_25_26') }}
   WHERE LOWER(TRIM(CAST(AssessmentType AS STRING))) = 'summative'
     AND LOWER(TRIM(CAST(Subject AS STRING))) = 'ela'
+  QUALIFY ROW_NUMBER() OVER (
+    PARTITION BY student_number, AssessmentName
+    ORDER BY {{ state_testing_25_26_latest_row_order() }}
+  ) = 1
 ),
 
 math_continuous_2526 AS (
-  SELECT DISTINCT
+  SELECT
     StudentIdentifier AS studentidentifier,
     student_number,
     AssessmentName AS math_assessmentname,
@@ -168,6 +172,10 @@ math_continuous_2526 AS (
   FROM {{ source('state_testing', 'state_testing_continuous_25_26') }}
   WHERE LOWER(TRIM(CAST(AssessmentType AS STRING))) = 'summative'
     AND LOWER(TRIM(CAST(Subject AS STRING))) = 'math'
+  QUALIFY ROW_NUMBER() OVER (
+    PARTITION BY student_number, AssessmentName
+    ORDER BY {{ state_testing_25_26_latest_row_order() }}
+  ) = 1
 ),
 
 joined_continuous_2526 AS (

@@ -21,9 +21,6 @@ sources:
       - name: state_testing_continuous_25_26
         identifier: state_testing_continuous_25-26
         description: State testing continuous data for 2025-26 school year
-        tests:
-          - state_testing_continuous_25_26_cast_summative_no_duplicates: {}
-          - state_testing_continuous_25_26_sbac_summative_no_duplicates: {}
 
   - name: dbt_historical
     description: Historical tables in dbt_historical dataset
@@ -80,3 +77,35 @@ models:
               values: ['24-25', '25-26']
       - name: hit_tutoring
         description: HIT tutoring flag from student_to_teacher (NULL on historical snapshot-only rows).
+
+  - name: elpac_tabular
+    description: >
+      One row per 25-26 Summative ELPAC or Summative Alternate ELPAC result. Prior-year 24-25
+      same-track scores joined on student_number. Roster fields from student_to_teacher (25-26).
+      ELPI level/rank, eligibility, and Advanced ELPI per CA reporting rules.
+    columns:
+      - name: year
+        description: School year from student_to_teacher (25-26).
+      - name: elpac_track
+        description: "Assessment track: elpac (Summative ELPAC) or alternate (Summative Alternate ELPAC)."
+      - name: elpi_eligible
+        description: >
+          1 when same-track Summative ELPAC/Alternate exists in both 25-26 and 24-25; 0 when
+          prior-year result is missing (not in ELPI denominator).
+      - name: elpi_level
+        description: >
+          Current-year ELPI level (1, 2L, 2H, 3L, 3H, 4 for Summative ELPAC; 1-3 for Alternate).
+          Uses roster grade_level and current scale score.
+      - name: prev_year_elpi_level
+        description: Prior-year ELPI level using gradelevelwhenassessed from the 24-25 test row.
+      - name: elpi_level_rank
+        description: Numeric rank for current ELPI level (1-6 summative; 1-3 alternate).
+      - name: prev_year_elpi_level_rank
+        description: Numeric rank for prior-year ELPI level.
+      - name: advanced_elpi
+        description: >
+          1 when student met Advanced ELPI criteria (summative rank progress or level-4 maintain;
+          alternate level increase, level-3 maintain, or +10 scale score). 0 when not eligible or
+          criteria not met.
+      - name: hit_tutoring
+        description: HIT tutoring flag from student_to_teacher (25-26).

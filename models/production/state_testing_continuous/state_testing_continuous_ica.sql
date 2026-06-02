@@ -15,6 +15,10 @@ WITH ica AS (
     a.ScaleScore AS Scalescore
   FROM {{ source('state_testing', 'state_testing_continuous_25_26') }} a
   WHERE LOWER(TRIM(CAST(a.AssessmentType AS STRING))) LIKE '%ica%'
+  QUALIFY ROW_NUMBER() OVER (
+    PARTITION BY a.student_number, a.AssessmentName
+    ORDER BY {{ state_testing_25_26_latest_row_order() }}
+  ) = 1
 ),
 
 student_to_teacher AS (

@@ -24,7 +24,7 @@ WITH cast_continuous_2425 AS (
 ),
 
 cast_continuous_2526 AS (
-  SELECT DISTINCT
+  SELECT
     a.StudentIdentifier AS studentidentifier,
     a.student_number,
     a.AssessmentName AS assessmentname,
@@ -38,6 +38,10 @@ cast_continuous_2526 AS (
     CAST(a.`CAST: Earth and Space Sciences` AS STRING) AS `cast__earth_and_space_sciences`
   FROM {{ source('state_testing', 'state_testing_continuous_25_26') }} a
   WHERE a.AssessmentName IN ('CAST Summative Grade 5', 'CAST Summative Grade 8', 'CAST Summative Grade HS')
+  QUALIFY ROW_NUMBER() OVER (
+    PARTITION BY a.student_number, a.AssessmentName
+    ORDER BY {{ state_testing_25_26_latest_row_order() }}
+  ) = 1
 ),
 
 student_to_teacher_2425 AS (
