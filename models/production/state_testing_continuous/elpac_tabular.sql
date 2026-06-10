@@ -1,7 +1,8 @@
 {{ config(materialized='view', schema='views') }}
 
 -- One row per 25-26 Summative ELPAC or Summative Alternate ELPAC result.
--- Prior-year 24-25 same-track results joined on student_number + elpac_track.
+-- Prior-year 24-25 same-track results joined on student_number + elpac_track
+-- (studentidentifier for one-off 9409030211 when source student_number is 0).
 -- Roster/demographics from student_to_teacher (25-26). ELPI metrics per CA ELPI rules.
 
 WITH elpac_current_2526 AS (
@@ -30,6 +31,17 @@ WITH elpac_current_2526 AS (
     PARTITION BY a.student_number, a.AssessmentName
     ORDER BY {{ state_testing_25_26_latest_row_order() }}
   ) = 1
+),
+
+-- One-off: state testing has student_number=0; roster SSID is 601543 for studentidentifier 9409030211.
+elpac_current_2526_with_keys AS (
+  SELECT
+    *,
+    CASE
+      WHEN studentidentifier = 9409030211 THEN 601543
+      ELSE NULLIF(student_number, 0)
+    END AS roster_student_number
+  FROM elpac_current_2526
 ),
 
 elpac_prior_2425 AS (
@@ -70,7 +82,7 @@ student_to_teacher_2526 AS (
 joined AS (
   SELECT
     curr.studentidentifier,
-    COALESCE(st.student_number, curr.student_number) AS student_number,
+    COALESCE(st.student_number, curr.roster_student_number, curr.student_number) AS student_number,
     st.lastfirst,
     st.grade_level,
     st.elastatus,
@@ -99,18 +111,18 @@ joined AS (
     prev.gradelevelwhenassessed AS prev_year_gradelevelwhenassessed,
     prev.elpac_track AS prev_year_elpac_track,
     CASE
-      WHEN prev.student_number IS NOT NULL THEN 1
+      WHEN prev.studentidentifier IS NOT NULL THEN 1
       ELSE 0
     END AS elpi_eligible
-  FROM elpac_current_2526 AS curr
+  FROM elpac_current_2526_with_keys AS curr
   LEFT JOIN elpac_prior_2425 AS prev
-    ON curr.student_number = prev.student_number
-    AND curr.elpac_track = prev.elpac_track
-    -- One-off guard: this student has placeholder student_number=0 in source; do not
-    -- infer prior-year linkage from that key.
-    AND NOT (curr.studentidentifier = 9409030211 AND curr.student_number = 0)
+    ON curr.elpac_track = prev.elpac_track
+    AND (
+      (curr.studentidentifier = 9409030211 AND prev.studentidentifier = 9409030211)
+      OR (curr.studentidentifier != 9409030211 AND curr.student_number = prev.student_number)
+    )
   LEFT JOIN student_to_teacher_2526 AS st
-    ON st.student_number = curr.student_number
+    ON st.student_number = curr.roster_student_number
 ),
 
 elpi_cuts AS (

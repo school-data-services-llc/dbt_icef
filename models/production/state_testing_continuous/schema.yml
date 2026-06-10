@@ -102,6 +102,10 @@ models:
         description: Numeric rank for current ELPI level (1-6 summative; 1-3 alternate).
       - name: prev_year_elpi_level_rank
         description: Numeric rank for prior-year ELPI level.
+      - name: elpi_growth_category
+        description: >
+          Student's ELPI movement category based on prior-year and current-year ELPI levels:
+          decreased, maintained below level 4, maintained level 4, or progressed.
       - name: advanced_elpi
         description: >
           1 when student met Advanced ELPI criteria (summative rank progress or level-4 maintain;
