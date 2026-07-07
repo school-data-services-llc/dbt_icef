@@ -200,6 +200,19 @@ SELECT
   {{ elpi_level_rank('elpi_level') }} AS elpi_level_rank,
   {{ elpi_level_rank('prev_year_elpi_level') }} AS prev_year_elpi_level_rank,
   CASE
+    WHEN elpi_eligible = 0 THEN NULL
+    WHEN {{ elpi_level_rank('elpi_level') }} < {{ elpi_level_rank('prev_year_elpi_level') }}
+      THEN 'ELs who Decreased at Least One ELPI Level'
+    WHEN {{ elpi_level_rank('elpi_level') }} > {{ elpi_level_rank('prev_year_elpi_level') }}
+      THEN 'ELs who Progressed at Least One ELPI Level'
+    WHEN elpi_level = '4' AND prev_year_elpi_level = '4'
+      THEN 'ELs who Maintained ELPI Level 4'
+    WHEN elpi_level = prev_year_elpi_level
+      AND elpi_level IN ('1', '2L', '2H', '3L', '3H')
+      THEN 'ELs who Maintained ELPI Levels 1, 2L, 2H, 3L, 3H'
+    ELSE NULL
+  END AS elpi_growth_category,
+  CASE
     WHEN elpi_eligible = 0 THEN 0
     WHEN elpac_track = 'alternate' OR prev_year_elpac_track = 'alternate' THEN
       CASE

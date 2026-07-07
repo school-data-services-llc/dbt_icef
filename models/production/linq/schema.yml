@@ -1,0 +1,56 @@
+version: 2
+
+models:
+  - name: student_meal_applications
+    description: >
+      Deduplicated LINQ meal applications: one row per student per academic year.
+      When multiple applications exist, prefers the status closest to a final
+      decision (Processed first, Duplicate last), then the most recent
+      application_date. Excludes rows with no SIS student_id.
+    tests:
+      - dbt_utils.unique_combination_of_columns:
+          combination_of_columns:
+            - student_id
+            - academic_year
+    columns:
+      - name: student_id
+        description: "SIS student ID (Person.Identifier in LINQ)"
+        tests:
+          - not_null
+      - name: application_status
+        description: >
+          Best application status for this student-year. LINQ values include
+          Processed, Reviewed, Second Review, Verification, Submitted, On Hold,
+          In Progress (Incomplete), In Progress (Draft), Invalid, and Duplicate.
+      - name: is_finalized
+        description: "True when application_status is Processed"
+      - name: eligibility_type
+        description: "Eligibility determined by the application (Free, Reduced, Paid)"
+      - name: application_date
+        description: "Application date (parsed from LINQ ISO timestamp)"
+      - name: academic_year
+        description: "School year the application applies to (e.g. 2025-2026)"
+        tests:
+          - not_null
+
+  - name: student_meals
+    description: >
+      Meal participation records from LINQ joined with each student's best meal
+      application for the academic year (Processed preferred over Duplicate,
+      then most recent). One row per student per participation date per meal type.
+      Currently disabled.
+    columns:
+      - name: student_id
+        description: "SIS student ID (Person.Identifier in LINQ); null when LINQ has no person match"
+      - name: participation_date
+        description: "Date the meal was served"
+        tests:
+          - not_null
+      - name: meal_type
+        description: "Serving session name (e.g. Breakfast, Lunch)"
+      - name: eligibility_at_meal
+        description: "Eligibility status recorded on the transaction (Free/Reduced/Paid)"
+      - name: application_status
+        description: "Status of the joined application (Processed, Duplicate, etc.)"
+      - name: application_eligibility_type
+        description: "Eligibility determined by the joined application"

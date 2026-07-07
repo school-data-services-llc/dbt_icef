@@ -58,6 +58,11 @@ models:
         +materialized: view
         +enabled: true
 
+      linq:
+        +schema: linq
+        +materialized: view
+        +enabled: true
+
     
 
   

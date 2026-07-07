@@ -43,4 +43,13 @@ sources:
       - name: pear_daily_updates
         description: "Daily updates for PEAR"
 
+  - name: linq
+    schema: linq
+    database: icef-437920
+    tables:
+      - name: linq_meal_applications
+        description: "Meal applications extracted from the LINQ OData API (one row per student per family application)"
+      - name: linq_meal_participation
+        description: "Daily meal participation records from LINQ (one row per student per date per serving session)"
+
 #looks like in ps_StudentRosters student id 601119 appears twice for the 25-26 SY
