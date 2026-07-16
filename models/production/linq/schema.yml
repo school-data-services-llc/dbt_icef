@@ -33,6 +33,55 @@ models:
         tests:
           - not_null
 
+  - name: student_meal_application_2
+    description: >
+      One LINQ meal eligibility record per student per academic year. Direct
+      certification, homeless, migrant, and foster eligibility take precedence
+      over family meal applications. Within an eligibility category, the model
+      prefers the status closest to a final decision and then the most recent
+      application date. Excludes rows with no SIS student_id, and excludes
+      students not present on student_to_teacher for the matching school year
+      (LINQ '2025-2026' maps to roster '25-26').
+    tests:
+      - dbt_utils.unique_combination_of_columns:
+          combination_of_columns:
+            - student_id
+            - academic_year
+    columns:
+      - name: student_id
+        description: "SIS student ID (Person.Identifier in LINQ)"
+        tests:
+          - not_null
+      - name: eligibility_category
+        description: >
+          Eligibility pathway: Direct Certification, Homeless, Migrant, Foster,
+          or Meal Application.
+        tests:
+          - accepted_values:
+              values:
+                - Direct Certification
+                - Homeless
+                - Migrant
+                - Foster
+                - Meal Application
+      - name: eligibility_benefit_type
+        description: >
+          LINQ benefit type used to derive eligibility_category, such as
+          Calfresh (SNAP), CalWorks, Medicaid, Medicaid Reduced, Homeless,
+          Migrant, or Foster. Null indicates a family meal application.
+      - name: eligibility_type
+        description: "Selected eligibility result (Free, Reduced, or Paid)"
+      - name: application_status
+        description: "Status of the selected LINQ record"
+      - name: is_finalized
+        description: "True when application_status is Processed"
+      - name: application_date
+        description: "Application or eligibility date parsed from the LINQ timestamp"
+      - name: academic_year
+        description: "School year the eligibility applies to (e.g. 2025-2026)"
+        tests:
+          - not_null
+
   - name: student_meals
     description: >
       Meal participation records from LINQ joined with each student's best meal

@@ -1,0 +1,18 @@
+Yes — for the current year grain, you’re meeting that intent. Both uniqueness checks being zero just confirms the view is clean; the preference logic is what actually implements her rule.
+
+Her rule vs what the view does
+Her wording	What student_meal_application_2 does
+When a new record is added, check if student already exists
+Not insert-time logic — it’s a view that re-ranks all source rows every query
+If already eligible via DC / homeless / migrant / foster, disregard the meal application
+Yes — those categories rank above Meal Application, so the meal app loses
+Mid-year change (e.g. meal app → DC)
+Yes — once a DC/categorical row exists for that student-year, it wins on the next query
+What “disregard” means here
+You don’t delete the meal app from linq_meal_applications. You don’t select it as the winning row for that student_id + academic_year.
+
+Examples you’ve already validated:
+
+603010 — Medicaid Reduced DC wins; later Free meal app disregarded
+601057 — CalFresh DC wins; Duplicate meal apps disregarded
+10012 — only a meal app exists → kept (correct; nothing to prefer over it)
