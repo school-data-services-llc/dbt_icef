@@ -1,12 +1,30 @@
 {{ config(materialized='view', schema='views') }}
 
--- One row per student per academic year. Direct certification and categorical
--- eligibility take precedence over a family meal application. This preserves
--- the authoritative eligibility pathway when a covered family also applies.
--- Students not on student_to_teacher for the matching school year are excluded
--- (e.g. graduates / leavers with LINQ eligibility but no current roster row).
+-- Full 25-26 roster with left-joined best LINQ meal eligibility record.
+-- Use as a running record of who has coverage/submission vs who still needs
+-- an application. Direct certification and categorical eligibility take
+-- precedence over a family meal application when ranking LINQ rows.
+--
+-- Year hardcode (change both when moving to 26-27):
+--   roster year:         '25-26'
+--   LINQ academic_year:  '2025-2026'
 
-WITH categorized AS (
+WITH roster AS (
+  SELECT
+    CAST(student_number AS INT64) AS student_number,
+    school_name,
+    grade_level,
+    lastfirst,
+    ROW_NUMBER() OVER (
+      PARTITION BY CAST(student_number AS INT64)
+      ORDER BY school_name
+    ) AS rn
+  FROM {{ source('views', 'student_to_teacher') }}
+  WHERE year = '25-26'
+    AND student_number IS NOT NULL
+),
+
+categorized AS (
   SELECT
     * EXCEPT (student_id),
     CAST(student_id AS INT64) AS student_id,
@@ -27,13 +45,14 @@ WITH categorized AS (
     END AS eligibility_category
   FROM {{ source('linq', 'linq_meal_applications') }}
   WHERE student_id IS NOT NULL
+    AND academic_year = '2025-2026'
 ),
 
 ranked AS (
   SELECT
     *,
     ROW_NUMBER() OVER (
-      PARTITION BY student_id, academic_year
+      PARTITION BY student_id
       ORDER BY
         CASE eligibility_category
           WHEN 'Direct Certification' THEN 1
@@ -65,36 +84,36 @@ ranked AS (
   FROM categorized
 ),
 
-roster AS (
-  SELECT DISTINCT
-    CAST(student_number AS INT64) AS student_number,
-    year
-  FROM {{ source('views', 'student_to_teacher') }}
+best_meal AS (
+  SELECT *
+  FROM ranked
+  WHERE rn = 1
 )
 
 SELECT
-  r.student_id,
-  r.personid AS person_id,
-  r.familymealapplicationid AS family_meal_application_id,
-  r.mealapplicationid AS meal_application_id,
-  r.school,
-  r.grade,
-  r.application_status,
-  r.application_status = 'Processed' AS is_finalized,
-  r.eligibility_type,
-  r.eligibility_benefit_type,
-  r.eligibility_category,
-  r.application_date_parsed AS application_date,
-  r.academic_year,
-  r.firstname AS first_name,
-  r.lastname AS last_name
-FROM ranked r
-INNER JOIN roster st
-  ON r.student_id = st.student_number
-  -- LINQ academic_year is '2025-2026'; roster year is '25-26'
- AND st.year = CONCAT(
-   SUBSTR(r.academic_year, 3, 2),
-   '-',
-   SUBSTR(r.academic_year, 8, 2)
- )
-WHERE r.rn = 1
+  st.student_number AS student_id,
+  m.personid AS person_id,
+  m.familymealapplicationid AS family_meal_application_id,
+  m.mealapplicationid AS meal_application_id,
+  COALESCE(m.school, st.school_name) AS school,
+  COALESCE(m.grade, CAST(st.grade_level AS STRING)) AS grade,
+  m.application_status,
+  m.application_status = 'Processed' AS is_finalized,
+  m.eligibility_type,
+  m.eligibility_benefit_type,
+  m.eligibility_category,
+  m.application_date_parsed AS application_date,
+  '2025-2026' AS academic_year,
+  COALESCE(
+    m.firstname,
+    NULLIF(TRIM(SPLIT(st.lastfirst, ',')[SAFE_OFFSET(1)]), '')
+  ) AS first_name,
+  COALESCE(
+    m.lastname,
+    NULLIF(TRIM(SPLIT(st.lastfirst, ',')[SAFE_OFFSET(0)]), '')
+  ) AS last_name,
+  m.student_id IS NULL AS needs_application
+FROM roster st
+LEFT JOIN best_meal m
+  ON st.student_number = m.student_id
+WHERE st.rn = 1

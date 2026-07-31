@@ -35,13 +35,13 @@ models:
 
   - name: student_meal_application_2
     description: >
-      One LINQ meal eligibility record per student per academic year. Direct
-      certification, homeless, migrant, and foster eligibility take precedence
-      over family meal applications. Within an eligibility category, the model
-      prefers the status closest to a final decision and then the most recent
-      application date. Excludes rows with no SIS student_id, and excludes
-      students not present on student_to_teacher for the matching school year
-      (LINQ '2025-2026' maps to roster '25-26').
+      Full 25-26 student_to_teacher roster left-joined to the best LINQ meal
+      eligibility record for 2025-2026. Use as a running record of who has
+      submitted or is already covered (DC / categorical) versus who still needs
+      an application. When multiple LINQ rows exist, prefers Direct Certification
+      / Homeless / Migrant / Foster over Meal Application, then status closest
+      to a final decision, then most recent application_date. Currently hardcoded
+      to roster year '25-26' and LINQ academic_year '2025-2026'.
     tests:
       - dbt_utils.unique_combination_of_columns:
           combination_of_columns:
@@ -49,13 +49,14 @@ models:
             - academic_year
     columns:
       - name: student_id
-        description: "SIS student ID (Person.Identifier in LINQ)"
+        description: "SIS student ID from student_to_teacher.student_number"
         tests:
           - not_null
       - name: eligibility_category
         description: >
-          Eligibility pathway: Direct Certification, Homeless, Migrant, Foster,
-          or Meal Application.
+          Eligibility pathway when a LINQ record exists: Direct Certification,
+          Homeless, Migrant, Foster, or Meal Application. Null when the student
+          has no LINQ meal/eligibility record for the year.
         tests:
           - accepted_values:
               values:
@@ -64,21 +65,29 @@ models:
                 - Migrant
                 - Foster
                 - Meal Application
+              config:
+                where: "eligibility_category IS NOT NULL"
       - name: eligibility_benefit_type
         description: >
           LINQ benefit type used to derive eligibility_category, such as
           Calfresh (SNAP), CalWorks, Medicaid, Medicaid Reduced, Homeless,
-          Migrant, or Foster. Null indicates a family meal application.
+          Migrant, or Foster. Null for family meal applications or students
+          with no LINQ record.
       - name: eligibility_type
-        description: "Selected eligibility result (Free, Reduced, or Paid)"
+        description: "Selected eligibility result (Free, Reduced, or Paid); null if no LINQ record"
       - name: application_status
-        description: "Status of the selected LINQ record"
+        description: "Status of the selected LINQ record; null if no LINQ record"
       - name: is_finalized
-        description: "True when application_status is Processed"
+        description: "True when application_status is Processed; null if no LINQ record"
       - name: application_date
-        description: "Application or eligibility date parsed from the LINQ timestamp"
+        description: "Application or eligibility date parsed from the LINQ timestamp; null if no LINQ record"
+      - name: needs_application
+        description: >
+          True when the student has no LINQ meal/eligibility record for the year
+          (still needs to submit). False when already covered via DC/categorical
+          eligibility or a family meal application.
       - name: academic_year
-        description: "School year the eligibility applies to (e.g. 2025-2026)"
+        description: "School year for this roster snapshot (currently always 2025-2026)"
         tests:
           - not_null
 
