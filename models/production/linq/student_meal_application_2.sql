@@ -1,33 +1,42 @@
 {{ config(materialized='view', schema='views') }}
 
--- Full 25-26 roster with left-joined best LINQ meal eligibility record.
--- Use as a running record of who has coverage/submission vs who still needs
--- an application. Direct certification and categorical eligibility take
--- precedence over a family meal application when ranking LINQ rows.
+-- Full student_to_teacher roster (one row per student per year) left-joined to
+-- the best LINQ meal eligibility record for that same academic year. Use as a
+-- running record of who has coverage/submission vs who still needs an
+-- application. Direct certification and categorical eligibility take precedence
+-- over a family meal application when ranking LINQ rows.
 --
--- Year hardcode (change both when moving to 26-27):
---   roster year:         '25-26'
---   LINQ academic_year:  '2025-2026'
+-- Year mapping:
+--   roster year 'YY-YY'  -> academic_year '20YY-20YY'
+--   LINQ may send '2025-2026' or '2026/2027'; both normalize to hyphen form.
+-- Roster years before 25-26 are excluded (meal tracking starts there).
 
 WITH roster AS (
   SELECT
     CAST(student_number AS INT64) AS student_number,
+    year AS roster_year,
+    CONCAT(
+      '20', SPLIT(year, '-')[OFFSET(0)],
+      '-',
+      '20', SPLIT(year, '-')[OFFSET(1)]
+    ) AS academic_year,
     school_name,
     grade_level,
     lastfirst,
     ROW_NUMBER() OVER (
-      PARTITION BY CAST(student_number AS INT64)
+      PARTITION BY CAST(student_number AS INT64), year
       ORDER BY school_name
     ) AS rn
   FROM {{ source('views', 'student_to_teacher') }}
-  WHERE year = '25-26'
+  WHERE year >= '25-26'
     AND student_number IS NOT NULL
 ),
 
 categorized AS (
   SELECT
-    * EXCEPT (student_id),
+    * EXCEPT (student_id, academic_year),
     CAST(student_id AS INT64) AS student_id,
+    REPLACE(academic_year, '/', '-') AS academic_year,
     DATE(
       SAFE.PARSE_TIMESTAMP('%Y-%m-%dT%H:%M:%E*S%Ez', application_date)
     ) AS application_date_parsed,
@@ -45,14 +54,13 @@ categorized AS (
     END AS eligibility_category
   FROM {{ source('linq', 'linq_meal_applications') }}
   WHERE student_id IS NOT NULL
-    AND academic_year = '2025-2026'
 ),
 
 ranked AS (
   SELECT
     *,
     ROW_NUMBER() OVER (
-      PARTITION BY student_id
+      PARTITION BY student_id, academic_year
       ORDER BY
         CASE eligibility_category
           WHEN 'Direct Certification' THEN 1
@@ -103,7 +111,7 @@ SELECT
   m.eligibility_benefit_type,
   m.eligibility_category,
   m.application_date_parsed AS application_date,
-  '2025-2026' AS academic_year,
+  st.academic_year,
   COALESCE(
     m.firstname,
     NULLIF(TRIM(SPLIT(st.lastfirst, ',')[SAFE_OFFSET(1)]), '')
@@ -116,4 +124,5 @@ SELECT
 FROM roster st
 LEFT JOIN best_meal m
   ON st.student_number = m.student_id
+ AND st.academic_year = m.academic_year
 WHERE st.rn = 1

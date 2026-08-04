@@ -35,13 +35,15 @@ models:
 
   - name: student_meal_application_2
     description: >
-      Full 25-26 student_to_teacher roster left-joined to the best LINQ meal
-      eligibility record for 2025-2026. Use as a running record of who has
-      submitted or is already covered (DC / categorical) versus who still needs
-      an application. When multiple LINQ rows exist, prefers Direct Certification
-      / Homeless / Migrant / Foster over Meal Application, then status closest
-      to a final decision, then most recent application_date. Currently hardcoded
-      to roster year '25-26' and LINQ academic_year '2025-2026'.
+      Multi-year student_to_teacher roster left-joined to the best LINQ meal
+      eligibility record for the matching academic year. One row per student per
+      year from 25-26 onward. Use as a running record of who has submitted or is
+      already covered (DC / categorical) versus who still needs an application.
+      When multiple LINQ rows exist for a student-year, prefers Direct
+      Certification / Homeless / Migrant / Foster over Meal Application, then
+      status closest to a final decision, then most recent application_date.
+      Roster year 'YY-YY' maps to academic_year '20YY-20YY'; LINQ values with
+      '/' are normalized to hyphen form (e.g. 2026/2027 -> 2026-2027).
     tests:
       - dbt_utils.unique_combination_of_columns:
           combination_of_columns:
@@ -87,7 +89,7 @@ models:
           (still needs to submit). False when already covered via DC/categorical
           eligibility or a family meal application.
       - name: academic_year
-        description: "School year for this roster snapshot (currently always 2025-2026)"
+        description: "School year for this roster snapshot (e.g. 2025-2026, 2026-2027)"
         tests:
           - not_null
 
