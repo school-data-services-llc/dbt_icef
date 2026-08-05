@@ -12,8 +12,9 @@
 -- Roster years before 25-26 are excluded (meal tracking starts there).
 --
 -- PowerSchool homeless backfill (2026-2027 only for now):
---   When LINQ benefit/category is blank and roster ishomeless = 'Yes', fill
---   eligibility_benefit_type / eligibility_category as Homeless and set
+--   When LINQ fields are blank and roster ishomeless = 'Yes', fill
+--   eligibility_benefit_type / eligibility_category as Homeless,
+--   application_status as Processed (is_finalized TRUE), and
 --   needs_application = FALSE. Uses student_to_teacher.ishomeless (year-scoped).
 
 WITH roster AS (
@@ -111,8 +112,24 @@ SELECT
   m.mealapplicationid AS meal_application_id,
   st.school_name AS school,
   st.grade_level AS grade,
-  m.application_status,
-  m.application_status = 'Processed' AS is_finalized,
+  COALESCE(
+    m.application_status,
+    IF(
+      st.academic_year = '2026-2027'
+      AND LOWER(TRIM(IFNULL(st.ishomeless, ''))) = 'yes',
+      'Processed',
+      NULL
+    )
+  ) AS application_status,
+  COALESCE(
+    m.application_status = 'Processed',
+    IF(
+      st.academic_year = '2026-2027'
+      AND LOWER(TRIM(IFNULL(st.ishomeless, ''))) = 'yes',
+      TRUE,
+      NULL
+    )
+  ) AS is_finalized,
   m.eligibility_type,
   COALESCE(
     m.eligibility_benefit_type,

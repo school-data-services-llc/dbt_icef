@@ -44,9 +44,10 @@ models:
       status closest to a final decision, then most recent application_date.
       Roster year 'YY-YY' maps to academic_year '20YY-20YY'; LINQ values with
       '/' are normalized to hyphen form (e.g. 2026/2027 -> 2026-2027).
-      For 2026-2027 only, when LINQ benefit/category is blank and
-      student_to_teacher.ishomeless = Yes, backfills Homeless and sets
-      needs_application = FALSE (PowerSchool catch for students LINQ may miss).
+      For 2026-2027 only, when LINQ fields are blank and
+      student_to_teacher.ishomeless = Yes, backfills Homeless,
+      application_status = Processed, and needs_application = FALSE
+      (PowerSchool catch for students LINQ may miss).
     tests:
       - dbt_utils.unique_combination_of_columns:
           combination_of_columns:
@@ -82,9 +83,13 @@ models:
       - name: eligibility_type
         description: "Selected eligibility result (Free, Reduced, or Paid); null if no LINQ record"
       - name: application_status
-        description: "Status of the selected LINQ record; null if no LINQ record"
+        description: >
+          Status of the selected LINQ record. For 2026-2027, backfilled to
+          Processed when roster ishomeless = Yes and LINQ status is blank.
       - name: is_finalized
-        description: "True when application_status is Processed; null if no LINQ record"
+        description: >
+          True when application_status is Processed (including PS homeless
+          backfill); null when status is null
       - name: application_date
         description: "Application or eligibility date parsed from the LINQ timestamp; null if no LINQ record"
       - name: needs_application
