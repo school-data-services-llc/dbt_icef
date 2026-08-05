@@ -44,6 +44,9 @@ models:
       status closest to a final decision, then most recent application_date.
       Roster year 'YY-YY' maps to academic_year '20YY-20YY'; LINQ values with
       '/' are normalized to hyphen form (e.g. 2026/2027 -> 2026-2027).
+      For 2026-2027 only, when LINQ benefit/category is blank and
+      student_to_teacher.ishomeless = Yes, backfills Homeless and sets
+      needs_application = FALSE (PowerSchool catch for students LINQ may miss).
     tests:
       - dbt_utils.unique_combination_of_columns:
           combination_of_columns:
@@ -56,9 +59,10 @@ models:
           - not_null
       - name: eligibility_category
         description: >
-          Eligibility pathway when a LINQ record exists: Direct Certification,
-          Homeless, Migrant, Foster, or Meal Application. Null when the student
-          has no LINQ meal/eligibility record for the year.
+          Eligibility pathway: Direct Certification, Homeless, Migrant, Foster,
+          or Meal Application from LINQ when present. For 2026-2027, may be
+          backfilled to Homeless from roster ishomeless when LINQ category is
+          blank. Otherwise null when no LINQ record and no PS homeless backfill.
         tests:
           - accepted_values:
               values:
@@ -71,10 +75,10 @@ models:
                 where: "eligibility_category IS NOT NULL"
       - name: eligibility_benefit_type
         description: >
-          LINQ benefit type used to derive eligibility_category, such as
-          Calfresh (SNAP), CalWorks, Medicaid, Medicaid Reduced, Homeless,
-          Migrant, or Foster. Null for family meal applications or students
-          with no LINQ record.
+          LINQ benefit type (Calfresh/SNAP, CalWorks, Medicaid, Homeless, etc.)
+          when present. For 2026-2027, backfilled to Homeless from roster
+          ishomeless when LINQ benefit is blank. Null for family meal apps with
+          no benefit type and no PS homeless backfill.
       - name: eligibility_type
         description: "Selected eligibility result (Free, Reduced, or Paid); null if no LINQ record"
       - name: application_status
@@ -85,9 +89,9 @@ models:
         description: "Application or eligibility date parsed from the LINQ timestamp; null if no LINQ record"
       - name: needs_application
         description: >
-          True when the student has no LINQ meal/eligibility record for the year
-          (still needs to submit). False when already covered via DC/categorical
-          eligibility or a family meal application.
+          True when the student has no LINQ meal/eligibility record and (for
+          2026-2027) is not flagged homeless on the roster. False when covered
+          via LINQ DC/categorical/meal app or PS homeless backfill.
       - name: academic_year
         description: "School year for this roster snapshot (e.g. 2025-2026, 2026-2027)"
         tests:

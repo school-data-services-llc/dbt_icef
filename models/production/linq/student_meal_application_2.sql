@@ -10,6 +10,11 @@
 --   roster year 'YY-YY'  -> academic_year '20YY-20YY'
 --   LINQ may send '2025-2026' or '2026/2027'; both normalize to hyphen form.
 -- Roster years before 25-26 are excluded (meal tracking starts there).
+--
+-- PowerSchool homeless backfill (2026-2027 only for now):
+--   When LINQ benefit/category is blank and roster ishomeless = 'Yes', fill
+--   eligibility_benefit_type / eligibility_category as Homeless and set
+--   needs_application = FALSE. Uses student_to_teacher.ishomeless (year-scoped).
 
 WITH roster AS (
   SELECT
@@ -23,6 +28,7 @@ WITH roster AS (
     school_name,
     grade_level,
     lastfirst,
+    ishomeless,
     ROW_NUMBER() OVER (
       PARTITION BY CAST(student_number AS INT64), year
       ORDER BY school_name
@@ -108,8 +114,24 @@ SELECT
   m.application_status,
   m.application_status = 'Processed' AS is_finalized,
   m.eligibility_type,
-  m.eligibility_benefit_type,
-  m.eligibility_category,
+  COALESCE(
+    m.eligibility_benefit_type,
+    IF(
+      st.academic_year = '2026-2027'
+      AND LOWER(TRIM(IFNULL(st.ishomeless, ''))) = 'yes',
+      'Homeless',
+      NULL
+    )
+  ) AS eligibility_benefit_type,
+  COALESCE(
+    m.eligibility_category,
+    IF(
+      st.academic_year = '2026-2027'
+      AND LOWER(TRIM(IFNULL(st.ishomeless, ''))) = 'yes',
+      'Homeless',
+      NULL
+    )
+  ) AS eligibility_category,
   m.application_date_parsed AS application_date,
   st.academic_year,
   COALESCE(
@@ -120,7 +142,13 @@ SELECT
     m.lastname,
     NULLIF(TRIM(SPLIT(st.lastfirst, ',')[SAFE_OFFSET(0)]), '')
   ) AS last_name,
-  m.student_id IS NULL AS needs_application
+  CASE
+    WHEN m.student_id IS NOT NULL THEN FALSE
+    WHEN st.academic_year = '2026-2027'
+      AND LOWER(TRIM(IFNULL(st.ishomeless, ''))) = 'yes'
+      THEN FALSE
+    ELSE TRUE
+  END AS needs_application
 FROM roster st
 LEFT JOIN best_meal m
   ON st.student_number = m.student_id
