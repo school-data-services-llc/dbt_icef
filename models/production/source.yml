@@ -23,18 +23,17 @@ sources:
           Joined to student_to_teacher on student_number and year; adjust source schema if not in views.
 
   - name: enrollment
-    description: "BigQuery dataset containing enrollment tables"
+    description: "BigQuery dataset containing enrollment capacity tables"
     tables:
       - name: budgeted_enrollment_capacity
-        description: "Table for budgeted enrollment and seat capacity"
-
-
-  - name: enrollment
-    description: "BigQuery dataset containing enrollment tables with hardcoded values"
-    tables:
+        description: >
+          Budgeted enrollment and seat capacity by school/grade. Includes a year
+          column (currently 26-27). Used by enrollment_demographics for the
+          current school year.
       - name: budgeted_enrollment_capacity_hardcode_8_18_25
-        description: "Table for budgeted enrollment and seat capacity (hardcoded for 8/18/25)"
-
+        description: >
+          Frozen 25-26 budgeted enrollment / seat capacity snapshot (loaded
+          ~8/18/25). Used by enrollment_demographics for prior-year YoY.
 
   - name: pear
     schema: pear

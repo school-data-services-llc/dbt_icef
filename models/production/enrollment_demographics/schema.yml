@@ -3,7 +3,11 @@ version: 2
 models:
   - name: enrollment_demographics
     description: >
-      Combines subgroup counts from student_to_teacher with budgeted enrollment and seat capacity.
+      Combines subgroup counts from student_to_teacher with budgeted enrollment
+      and seat capacity for 25-26 and 26-27. Capacity for 25-26 comes from
+      budgeted_enrollment_capacity_hardcode_8_18_25; 26-27 from
+      budgeted_enrollment_capacity. Roster/subgroup metrics come from
+      student_to_teacher for the matching year.
     columns:
       - name: school_name
         description: School name
