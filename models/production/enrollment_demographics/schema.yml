@@ -7,7 +7,9 @@ models:
       and seat capacity for 25-26 and 26-27. Capacity for 25-26 comes from
       budgeted_enrollment_capacity_hardcode_8_18_25; 26-27 from
       budgeted_enrollment_capacity. Roster/subgroup metrics come from
-      student_to_teacher for the matching year.
+      student_to_teacher for the matching year. The capacity column (26-27 only)
+      is a classroom / enrollment cap from enrollment.enrollment_grade_capacity
+      (static BQ table; IIECA uses classroom cap).
     columns:
       - name: school_name
         description: School name
@@ -17,6 +19,10 @@ models:
         description: Subgroup type (race, elastatus, sped_identifier, absenteeism_status, frlstatus, or blank for budget)
       - name: demographic
         description: Demographic value for the subgroup
+      - name: capacity
+        description: >
+          From enrollment.enrollment_grade_capacity (26-27 static table).
+          Budget and school-total rows only; null for subgroup rows and 25-26.
       - name: student_count
         description: Number of students in the subgroup or total enrollment
       - name: budgeted_enrollment

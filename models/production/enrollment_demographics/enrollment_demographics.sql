@@ -1,12 +1,24 @@
 {{ config(materialized='view', schema='views') }}
 
 -- Enrollment demographics + budget vs actual seats, by school / grade / year.
--- Capacity:
+-- Budget:
 --   25-26 <- enrollment.budgeted_enrollment_capacity_hardcode_8_18_25
 --   26-27 <- enrollment.budgeted_enrollment_capacity (year column)
+-- Classroom cap (capacity column, 26-27 only):
+--   enrollment.enrollment_grade_capacity (static table; update via SQL as needed)
+-- Joined on budget rows only.
 -- Roster / subgroups from student_to_teacher for the same years.
 
-WITH capacity AS (
+WITH grade_capacity AS (
+  SELECT
+    school_name,
+    CAST(grade_level AS STRING) AS grade_level,
+    year,
+    capacity
+  FROM {{ source('enrollment', 'enrollment_grade_capacity') }}
+),
+
+capacity AS (
   SELECT
     school_name,
     CAST(grade_level AS STRING) AS grade_level,
@@ -43,6 +55,7 @@ actual_vs_budget AS (
     c.grade_level,
     '' AS subgroup,
     '' AS demographic,
+    gc.capacity,
     ts.total_students AS student_count,
     c.budgeted_enrollment,
     c.budgeted_enrollment - SAFE_CAST(ts.total_students AS INT64) AS seats_remaining,
@@ -55,6 +68,10 @@ actual_vs_budget AS (
     ON c.school_name = ts.school_name
    AND c.grade_level = ts.grade_level
    AND c.year = ts.year
+  LEFT JOIN grade_capacity gc
+    ON c.school_name = gc.school_name
+   AND c.grade_level = gc.grade_level
+   AND c.year = gc.year
 ),
 
 school_totals AS (
@@ -64,6 +81,7 @@ school_totals AS (
     'total' AS grade_level,
     '' AS subgroup,
     '' AS demographic,
+    SUM(capacity) AS capacity,
     SUM(student_count) AS student_count,
     SUM(budgeted_enrollment) AS budgeted_enrollment,
     SUM(seats_remaining) AS seats_remaining,
@@ -82,6 +100,7 @@ subgroup_counts AS (
     CAST(grade_level AS STRING) AS grade_level,
     'race' AS subgroup,
     race AS demographic,
+    CAST(NULL AS INT64) AS capacity,
     COUNT(*) AS student_count,
     CAST(NULL AS INT64) AS budgeted_enrollment,
     CAST(NULL AS INT64) AS seats_remaining,
@@ -98,6 +117,7 @@ subgroup_counts AS (
     CAST(grade_level AS STRING) AS grade_level,
     'elastatus' AS subgroup,
     elastatus AS demographic,
+    CAST(NULL AS INT64) AS capacity,
     COUNT(*) AS student_count,
     CAST(NULL AS INT64) AS budgeted_enrollment,
     CAST(NULL AS INT64) AS seats_remaining,
@@ -114,6 +134,7 @@ subgroup_counts AS (
     CAST(grade_level AS STRING) AS grade_level,
     'sped_identifier' AS subgroup,
     sped_identifier AS demographic,
+    CAST(NULL AS INT64) AS capacity,
     COUNT(*) AS student_count,
     CAST(NULL AS INT64) AS budgeted_enrollment,
     CAST(NULL AS INT64) AS seats_remaining,
@@ -130,6 +151,7 @@ subgroup_counts AS (
     CAST(grade_level AS STRING) AS grade_level,
     'absenteeism_status' AS subgroup,
     absenteeism_status AS demographic,
+    CAST(NULL AS INT64) AS capacity,
     COUNT(*) AS student_count,
     CAST(NULL AS INT64) AS budgeted_enrollment,
     CAST(NULL AS INT64) AS seats_remaining,
@@ -146,6 +168,7 @@ subgroup_counts AS (
     CAST(grade_level AS STRING) AS grade_level,
     'frlstatus' AS subgroup,
     frlstatus AS demographic,
+    CAST(NULL AS INT64) AS capacity,
     COUNT(*) AS student_count,
     CAST(NULL AS INT64) AS budgeted_enrollment,
     CAST(NULL AS INT64) AS seats_remaining,

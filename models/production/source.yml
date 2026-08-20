@@ -34,6 +34,11 @@ sources:
         description: >
           Frozen 25-26 budgeted enrollment / seat capacity snapshot (loaded
           ~8/18/25). Used by enrollment_demographics for prior-year YoY.
+      - name: enrollment_grade_capacity
+        description: >
+          Static classroom / enrollment caps by school, grade, and year (26-27
+          from Enrollment Summary sheet snapshot). Update directly in BigQuery
+          via SQL; joined in enrollment_demographics for the capacity column.
 
   - name: pear
     schema: pear
