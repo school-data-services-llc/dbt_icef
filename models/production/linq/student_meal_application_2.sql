@@ -110,6 +110,8 @@ SELECT
   m.personid AS person_id,
   m.familymealapplicationid AS family_meal_application_id,
   m.mealapplicationid AS meal_application_id,
+  m.application_source,
+  m.linq_application_source,
   st.school_name AS school,
   st.grade_level AS grade,
   COALESCE(

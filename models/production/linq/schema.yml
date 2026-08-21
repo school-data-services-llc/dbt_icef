@@ -58,6 +58,16 @@ models:
         description: "SIS student ID from student_to_teacher.student_number"
         tests:
           - not_null
+      - name: application_source
+        description: >
+          LINQ pathway for the winning row: meal (district meal app / DC) or
+          state (state application). Null when no LINQ record (including PS
+          homeless backfill-only rows).
+      - name: linq_application_source
+        description: >
+          How the winning LINQ record entered the system (e.g. Direct
+          Certification, Online, Paper, System Generated). Null when no LINQ
+          record.
       - name: eligibility_category
         description: >
           Eligibility pathway: Direct Certification, Homeless, Migrant, Foster,
