@@ -1,0 +1,40 @@
+version: 2
+
+sources:
+  - name: powerschool
+    description: PowerSchool extracts in the powerschool BigQuery dataset
+    schema: powerschool
+    database: icef-437920
+    tables:
+      - name: pq_student_assessment_scores
+        description: >
+          Daily snapshot extract of student assessment scores from PowerSchool.
+          Filter to MAX(partitiontime) for the current snapshot.
+      - name: school_calendar
+        description: >
+          Instructional week calendar by school year (YY-YY), with week_number
+          and monday_date for each week.
+
+models:
+  - name: student_assessment_scores
+    description: >
+      Latest pq_student_assessment_scores snapshot with week_number from
+      school_calendar (joined on grade_entered_date's Monday and school year)
+      and student_to_teacher roster attributes left-joined on student_number
+      and year.
+    columns:
+      - name: week_number
+        description: >
+          Instructional week from school_calendar for the Monday of
+          grade_entered_date. Null when grade entered date is missing or
+          outside the calendar.
+      - name: grade_entered_date
+        description: Grade entered date used to derive week_number
+      - name: school_year
+        description: PowerSchool school year (YYYY-YYYY)
+      - name: year
+        description: Roster year from student_to_teacher (YY-YY); null if no roster match
+      - name: student_number
+        description: SIS student number from the assessment extract
+      - name: school_name
+        description: School acronym from student_to_teacher when matched

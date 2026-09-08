@@ -62,3 +62,8 @@ models:
         +schema: linq
         +materialized: view
         +enabled: true
+
+      powerschool:
+        +schema: views
+        +materialized: view
+        +enabled: true
