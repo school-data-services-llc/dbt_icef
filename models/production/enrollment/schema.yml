@@ -19,6 +19,14 @@ sources:
         description: Application pipeline snapshot (2025); stacked into enrollment.application_pipeline
       - name: application_pipeline_2026
         description: Application pipeline snapshot (2026); stacked into enrollment.application_pipeline
+      - name: Applications_2026
+        description: >
+          SchoolMint applications snapshot labeled 2026 (26-27 cycle).
+          Stacked into enrollment.applications_schoolmint_enroll.
+      - name: Applications_2027
+        description: >
+          SchoolMint applications snapshot labeled 2027 (27-28 cycle).
+          Stacked into enrollment.applications_schoolmint_enroll.
 
 models:
   - name: incoming_students
@@ -42,3 +50,23 @@ models:
       Union of dbt_historical application_pipeline_2025 and application_pipeline_2026,
       with a string `year` column ('24-25' vs '25-26') to differentiate snapshots.
       Built as a view in the enrollment dataset (reflects source changes on query).
+  - name: applications_schoolmint_enroll
+    description: >
+      Union of dbt_historical Applications_2026 and Applications_2027, with a
+      string `year` column ('26-27' vs '27-28') to differentiate snapshots.
+      Built as a view in the enrollment dataset (reflects source changes on query).
+    columns:
+      - name: year
+        description: School year label for the row ('26-27' from Applications_2026, '27-28' from Applications_2027).
+      - name: school_name
+        description: School name from the applications extract
+      - name: grade
+        description: Grade from the applications extract
+      - name: status
+        description: Application status
+      - name: submitted
+        description: Whether the application was submitted
+      - name: withdrawn
+        description: Withdrawal status
+      - name: created_at
+        description: Application created timestamp

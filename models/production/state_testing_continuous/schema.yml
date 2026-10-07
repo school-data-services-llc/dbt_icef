@@ -56,6 +56,13 @@ sources:
         description: List of grade 11 students for intervention in 2024-2025
 
 models:
+  - name: state_testing_continuous_iab
+    description: >
+      FIAB/IAB subset of state_testing_continuous_25-26 for main. Filters assessmenttype LIKE '%IAB%',
+      keeps the latest submit per student and assessment, and joins the 26-27 student_to_teacher roster
+      on StudentIdentifier = ssid. year is '26-27', data_source is 'CERS', score is ScaleScore,
+      proficiency is Reporting Category, and unit is the assessment name after the first ' - '.
+
   - name: cast_state_testing_tabular
     description: CAST summative tabular view (24-25 live + historical snapshot-only, 25-26 roster-driven).
     columns:

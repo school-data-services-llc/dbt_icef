@@ -212,6 +212,27 @@ state_testing_continuous_ica AS (
     CAST(performance_band_label AS STRING),
     CAST(proficiency AS STRING)
   FROM {{ ref('state_testing_continuous_ica') }}
+),
+
+state_testing_continuous_iab AS (
+  SELECT
+    CAST(data_source AS STRING),
+    CAST(assessment_id AS STRING),
+    CAST(year AS STRING),
+    CAST(date_taken AS STRING),
+    CAST(grade AS STRING),
+    CAST(local_student_id AS STRING),
+    CAST(test_type AS STRING),
+    CAST(curriculum AS STRING),
+    CAST(unit AS STRING),
+    CAST(unit_labels AS STRING),
+    CAST(title AS STRING),
+    CAST(standard_code AS STRING),
+    CAST(score AS STRING),
+    CAST(performance_band_level AS STRING),
+    CAST(performance_band_label AS STRING),
+    CAST(proficiency AS STRING)
+  FROM {{ ref('state_testing_continuous_iab') }}
 )
 
 
@@ -236,3 +257,5 @@ UNION ALL
 SELECT * FROM pear_assignment_summaries_view
 UNION ALL
 SELECT * FROM state_testing_continuous_ica
+UNION ALL
+SELECT * FROM state_testing_continuous_iab
