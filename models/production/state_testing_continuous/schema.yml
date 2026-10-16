@@ -22,6 +22,10 @@ sources:
         identifier: state_testing_continuous_25-26
         description: State testing continuous data for 2025-26 school year
 
+      - name: state_testing_continuous_26_27
+        identifier: state_testing_continuous_26-27
+        description: State testing continuous data for 2026-27 school year
+
   - name: dbt_historical
     description: Historical tables in dbt_historical dataset
     schema: dbt_historical
@@ -58,9 +62,10 @@ sources:
 models:
   - name: state_testing_continuous_iab
     description: >
-      FIAB/IAB subset of state_testing_continuous_25-26 for main. Filters assessmenttype LIKE '%IAB%',
-      keeps the latest submit per student and assessment, and joins the 26-27 student_to_teacher roster
-      on StudentIdentifier = ssid. year is '26-27', data_source is 'CERS', score is ScaleScore,
+      FIAB/IAB subset of state_testing_continuous_25-26 and state_testing_continuous_26-27 for main.
+      Filters assessmenttype LIKE '%IAB%', keeps the latest submit per student, assessment, and school year,
+      and joins student_to_teacher on StudentIdentifier = ssid for that same year. year follows SchoolYear
+      ('25-26' / '26-27'), data_source is 'CERS', test_type is 'FIAB', score is ScaleScore,
       proficiency is Reporting Category, and unit is the assessment name after the first ' - '.
 
   - name: cast_state_testing_tabular
