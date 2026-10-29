@@ -55,5 +55,29 @@ sources:
         description: "Meal applications extracted from the LINQ OData API (one row per student per family application)"
       - name: linq_meal_participation
         description: "Daily meal participation records from LINQ (one row per student per date per serving session)"
+      - name: UBA_Declined_Apps_2627
+        identifier: UBA_Declined_Apps_2627
+        description: >
+          Students whose parent/guardian declined to complete the Universal Benefits
+          Application for 2026-2027. Joined into student_meal_application_2 by
+          Student_Number for that academic year only.
+
+  - name: survey_monkey
+    schema: survey_monkey
+    database: icef-437920
+    tables:
+      - name: survey_questions
+        description: >
+          SurveyMonkey item dictionary from GET /surveys/{id}/details.
+          One row per answerable item (matrix row, checkbox choice, or
+          single/open-ended question). Stable ids for dbt joins.
+      - name: survey_responses
+        description: >
+          One row per SurveyMonkey respondent (Excel metadata columns:
+          respondent_id, collector_id, start/end, IP, email, name, custom data).
+      - name: survey_response_items
+        description: >
+          One row per respondent x item. choice_id/row_id are resolved to
+          Excel-style answer_text and item_label.
 
 #looks like in ps_StudentRosters student id 601119 appears twice for the 25-26 SY

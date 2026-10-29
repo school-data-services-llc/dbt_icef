@@ -48,6 +48,10 @@ models:
       student_to_teacher.ishomeless = Yes, backfills Homeless,
       application_status = Processed, and needs_application = FALSE
       (PowerSchool catch for students LINQ may miss).
+      Also for 2026-2027, students in linq.UBA_Declined_Apps_2627 are forced to
+      application_status = Processed, eligibility_benefit_type = Denied Benefits,
+      needs_application = FALSE, and is_finalized = TRUE (declined wins over LINQ
+      and homeless backfill).
     tests:
       - dbt_utils.unique_combination_of_columns:
           combination_of_columns:
@@ -88,25 +92,29 @@ models:
         description: >
           LINQ benefit type (Calfresh/SNAP, CalWorks, Medicaid, Homeless, etc.)
           when present. For 2026-2027, backfilled to Homeless from roster
-          ishomeless when LINQ benefit is blank. Null for family meal apps with
-          no benefit type and no PS homeless backfill.
+          ishomeless when LINQ benefit is blank. For 2026-2027 UBA declined
+          students (UBA_Declined_Apps_2627), forced to Denied Benefits.
+          Null for family meal apps with no benefit type and no PS homeless
+          backfill.
       - name: eligibility_type
         description: "Selected eligibility result (Free, Reduced, or Paid); null if no LINQ record"
       - name: application_status
         description: >
           Status of the selected LINQ record. For 2026-2027, backfilled to
           Processed when roster ishomeless = Yes and LINQ status is blank.
+          For 2026-2027 UBA declined students, forced to Processed.
       - name: is_finalized
         description: >
           True when application_status is Processed (including PS homeless
-          backfill); null when status is null
+          backfill and UBA declined override); null when status is null
       - name: application_date
         description: "Application or eligibility date parsed from the LINQ timestamp; null if no LINQ record"
       - name: needs_application
         description: >
           True when the student has no LINQ meal/eligibility record and (for
-          2026-2027) is not flagged homeless on the roster. False when covered
-          via LINQ DC/categorical/meal app or PS homeless backfill.
+          2026-2027) is not flagged homeless on the roster and is not on the
+          UBA declined list. False when covered via LINQ DC/categorical/meal
+          app, PS homeless backfill, or UBA declined override.
       - name: academic_year
         description: "School year for this roster snapshot (e.g. 2025-2026, 2026-2027)"
         tests:

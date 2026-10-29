@@ -63,6 +63,11 @@ models:
         +materialized: view
         +enabled: true
 
+      survey_monkey:
+        +schema: survey_monkey
+        +materialized: view
+        +enabled: true
+
       powerschool:
         +schema: views
         +materialized: view

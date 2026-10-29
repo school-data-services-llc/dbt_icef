@@ -16,6 +16,11 @@
 --   eligibility_benefit_type / eligibility_category as Homeless,
 --   application_status as Processed (is_finalized TRUE), and
 --   needs_application = FALSE. Uses student_to_teacher.ishomeless (year-scoped).
+--
+-- UBA declined override (2026-2027 only):
+--   Students in linq.UBA_Declined_Apps_2627 get application_status = Processed,
+--   eligibility_benefit_type = Denied Benefits, needs_application = FALSE,
+--   and is_finalized = TRUE. Declined wins over LINQ and homeless backfill.
 
 WITH roster AS (
   SELECT
@@ -103,6 +108,12 @@ best_meal AS (
   SELECT *
   FROM ranked
   WHERE rn = 1
+),
+
+declined_uba AS (
+  SELECT DISTINCT SAFE_CAST(Student_Number AS INT64) AS student_number
+  FROM {{ source('linq', 'UBA_Declined_Apps_2627') }}
+  WHERE SAFE_CAST(Student_Number AS INT64) IS NOT NULL
 )
 
 SELECT
@@ -114,34 +125,43 @@ SELECT
   m.linq_application_source,
   st.school_name AS school,
   st.grade_level AS grade,
-  COALESCE(
-    m.application_status,
-    IF(
-      st.academic_year = '2026-2027'
-      AND LOWER(TRIM(IFNULL(st.ishomeless, ''))) = 'yes',
-      'Processed',
-      NULL
+  CASE
+    WHEN d.student_number IS NOT NULL THEN 'Processed'
+    ELSE COALESCE(
+      m.application_status,
+      IF(
+        st.academic_year = '2026-2027'
+        AND LOWER(TRIM(IFNULL(st.ishomeless, ''))) = 'yes',
+        'Processed',
+        NULL
+      )
     )
-  ) AS application_status,
-  COALESCE(
-    m.application_status = 'Processed',
-    IF(
-      st.academic_year = '2026-2027'
-      AND LOWER(TRIM(IFNULL(st.ishomeless, ''))) = 'yes',
-      TRUE,
-      NULL
+  END AS application_status,
+  CASE
+    WHEN d.student_number IS NOT NULL THEN TRUE
+    ELSE COALESCE(
+      m.application_status = 'Processed',
+      IF(
+        st.academic_year = '2026-2027'
+        AND LOWER(TRIM(IFNULL(st.ishomeless, ''))) = 'yes',
+        TRUE,
+        NULL
+      )
     )
-  ) AS is_finalized,
+  END AS is_finalized,
   m.eligibility_type,
-  COALESCE(
-    m.eligibility_benefit_type,
-    IF(
-      st.academic_year = '2026-2027'
-      AND LOWER(TRIM(IFNULL(st.ishomeless, ''))) = 'yes',
-      'Homeless',
-      NULL
+  CASE
+    WHEN d.student_number IS NOT NULL THEN 'Denied Benefits'
+    ELSE COALESCE(
+      m.eligibility_benefit_type,
+      IF(
+        st.academic_year = '2026-2027'
+        AND LOWER(TRIM(IFNULL(st.ishomeless, ''))) = 'yes',
+        'Homeless',
+        NULL
+      )
     )
-  ) AS eligibility_benefit_type,
+  END AS eligibility_benefit_type,
   COALESCE(
     m.eligibility_category,
     IF(
@@ -162,6 +182,7 @@ SELECT
     NULLIF(TRIM(SPLIT(st.lastfirst, ',')[SAFE_OFFSET(0)]), '')
   ) AS last_name,
   CASE
+    WHEN d.student_number IS NOT NULL THEN FALSE
     WHEN m.student_id IS NOT NULL THEN FALSE
     WHEN st.academic_year = '2026-2027'
       AND LOWER(TRIM(IFNULL(st.ishomeless, ''))) = 'yes'
@@ -172,4 +193,7 @@ FROM roster st
 LEFT JOIN best_meal m
   ON st.student_number = m.student_id
  AND st.academic_year = m.academic_year
+LEFT JOIN declined_uba d
+  ON st.student_number = d.student_number
+ AND st.academic_year = '2026-2027'
 WHERE st.rn = 1
